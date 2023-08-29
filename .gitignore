@@ -1,0 +1,10 @@
+/.wwebjs_auth
+/.wwebjs_cache
+/Dockerfile
+/Dockerfile.bak
+/bak
+/node_modules
+/package-lock.json
+/package.json
+/yarn-error.log
+/yarn.lock
