@@ -1,14 +1,18 @@
-const { Client, Location, List, Buttons, LocalAuth, LinkingMethod } = require('whatsapp-web.js');
+import {gptManager} from './chatgpt.js';
+import pkg from 'whatsapp-web.js';
+const { Client, Location, List, Buttons, LocalAuth, LinkingMethod } = pkg;
 const re = /^!send ([0-9]*)/;
-const qrcode = require('qrcode-terminal');
-
+const number = "5492966670768";
+const me = number + "@c.us"
+const _gptManager = new gptManager();
 const client = new Client({
     authStrategy: new LocalAuth({clientId:"r2d2"}),
-    linkingMethod: new LinkingMethod({
-        phone: {
-            number: "5492966670768"
-        }
-    }),
+    // linkingMethod: new LinkingMethod({
+    //     // phone: {
+    //     //     number: number
+    //     // }
+
+    // }),
     headless: true,
     puppeteer: { 
         executablePath: '/usr/bin/google-chrome-stable',
@@ -29,7 +33,7 @@ client.on('code', (code) => {
 });
 
 client.on('qr', qr => {
-    qrcode.generate(qr, {small: true});
+    //qrcode.generate(qr, {small: true});
 });
 
 client.on('authenticated', () => {
@@ -254,6 +258,37 @@ client.on('message', async msg => {
         const chat = await msg.getChat();
         await chat.changeLabels([]);
     }
+    //chatgpt
+    else if (msg.mentionedIds.includes(me) && !msg.hasQuotedMsg)
+    {
+        let res = await _gptManager.abrirConversacion(msg);
+        if(res != "")
+        {
+            let rta = await msg.reply(res);
+            _gptManager.cargarRespuesta(msg, rta);
+        }
+    }
+    else if (msg.hasQuotedMsg)
+    {
+        let qtmsg = (await msg.getQuotedMessage());
+        let txt = "";
+
+        if(_gptManager.existeMensaje(qtmsg))
+        {
+            console.log('existe msg');
+            txt = await _gptManager.continuarConversacion(msg, qtmsg);
+        }
+        else {
+            console.log('NO existe msg');
+            txt = await _gptManager.abrirConversacionPorQuote(msg, qtmsg);
+        }
+        if(txt != "")
+        {
+            let rta = await msg.reply(txt);
+            _gptManager.cargarRespuesta(msg, rta);
+        }
+    }
+  
 });
 
 client.on('message_create', (msg) => {
